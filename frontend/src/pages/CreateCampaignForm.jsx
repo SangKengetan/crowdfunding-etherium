@@ -3,11 +3,13 @@
 import React, { useState } from 'react';
 import { ethers } from 'ethers';
 import CrowdFunding from '../abis/CrowdFunding.json';
+import { useNavigate } from 'react-router-dom';
 
 // Ganti dengan alamat kontrak hasil deploy Ganache
 const CONTRACT_ADDRESS = "0x4BADc658CB702EEfcA9D31dbBDD8585eAD257693";
 
 const CreateCampaignForm = () => {
+  const navigate = useNavigate();
   const [form, setForm] = useState({
     title: '',
     description: '',
@@ -141,6 +143,7 @@ const CreateCampaignForm = () => {
         <button
           disabled={loading}
           type="submit"
+          onClick={() => navigate('/all-campaigns')}
           className="bg-cyan-500 text-white px-6 py-3 rounded-md hover:bg-cyan-600 w-full font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {loading ? 'Creating...' : 'Create Campaign'}
