@@ -10,6 +10,7 @@ const WalletConnectButton = () => {
         const accounts = await window.ethereum.request({ method: "eth_requestAccounts" });
         if (accounts.length > 0) {
           setWalletAddress(accounts[0]);
+          localStorage.setItem("walletAddress", accounts[0]); // Simpan ke localStorage
         } else {
           setWalletAddress(""); // Logout
         }
@@ -23,18 +24,25 @@ const WalletConnectButton = () => {
   };
 
   // Fungsi 'logout' manual
-  const disconnectWallet = () => {
-    setWalletAddress("");
-  };
+  // const disconnectWallet = () => {
+  //   setWalletAddress("");
+  // };
 
   // Pantau perubahan akun (termasuk logout)
   useEffect(() => {
+    const savedAddress = localStorage.getItem("walletAddress");
+    if (savedAddress) {
+      setWalletAddress(savedAddress);
+    }
+
     if (window.ethereum) {
       window.ethereum.on("accountsChanged", (accounts) => {
         if (accounts.length > 0) {
           setWalletAddress(accounts[0]);
+          localStorage.setItem("walletAddress", accounts[0]);
         } else {
           setWalletAddress(""); // User logout dari MetaMask
+          localStorage.removeItem("walletAddress");
         }
       });
     }
@@ -42,11 +50,11 @@ const WalletConnectButton = () => {
 
   return (
     <button
-      onClick={walletAddress ? disconnectWallet : connectWallet}
-      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl shadow-md"
+      onClick={walletAddress ? undefined : connectWallet}
+      className="wallet-button px-4 py-2 bg-blue-600 hover:bg-blue-700 text-black dark:text-white font-semibold rounded-xl shadow-md"
     >
       {walletAddress
-        ? `Disconnect: ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+        ? `${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
         : "Connect Wallet"}
     </button>
   );

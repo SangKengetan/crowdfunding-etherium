@@ -22,6 +22,14 @@ const CreateCampaignForm = () => {
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
+  // const handleChange = (e) => {
+  //   if (e.target.name === "imageFile") {
+  //     // akses file melalui e.target.files[0]
+  //     setForm({ ...form, imageFile: e.target.files[0] });
+  //   } else {
+  //     setForm({ ...form, [e.target.name]: e.target.value });
+  //   }
+  // };
 
   const handleSubmit = async (e) => {
   e.preventDefault();
@@ -83,11 +91,11 @@ const CreateCampaignForm = () => {
         onSubmit={handleSubmit}
         className="bg-white shadow-md rounded-lg p-8 max-w-lg w-full"
       >
-        <h2 className="text-2xl font-semibold mb-6">Create a New Campaign</h2>
+        <h2 className="text-2xl font-semibold text-black mb-6">Create a New Campaign</h2>
 
         {error && <p className="text-red-500 mb-4">{error}</p>}
 
-        <label className="block mb-4">
+        <label className="block mb-4 text-black">
           <span>Title</span>
           <input
             name="title"
@@ -100,7 +108,7 @@ const CreateCampaignForm = () => {
           />
         </label>
 
-        <label className="block mb-4">
+        <label className="block mb-4 text-black">
           <span>Description</span>
           <textarea
             name="description"
@@ -113,7 +121,7 @@ const CreateCampaignForm = () => {
           ></textarea>
         </label>
 
-        <label className="block mb-4">
+        <label className="block mb-4 text-black">
           <span>Goal (ETH)</span>
           <input
             name="goal"
@@ -127,15 +135,17 @@ const CreateCampaignForm = () => {
           />
         </label>
 
-        <label className="block mb-6">
+        <label className="block mb-6 text-black">
           <span>Image URL</span>
           <input
             name="imageUrl"
             type="url"
             value={form.imageUrl}
+            // accept="image/*"
             onChange={handleChange}
             disabled={loading}
             required
+            // className="border p-2 rounded-md w-full mt-1 text-black bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-cyan-50 file:text-cyan-700 hover:file:bg-cyan-100"
             className="border p-2 rounded-md w-full mt-1 text-black"
           />
         </label>
@@ -144,7 +154,7 @@ const CreateCampaignForm = () => {
           disabled={loading}
           type="submit"
           onClick={() => navigate('/all-campaigns')}
-          className="bg-cyan-500 text-white px-6 py-3 rounded-md hover:bg-cyan-600 w-full font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
+          className="bg-black text-white px-6 py-3 rounded-md hover:bg-gray-500 w-full font-semibold disabled:bg-gray-400 disabled:cursor-not-allowed"
         >
           {loading ? 'Creating...' : 'Create Campaign'}
         </button>
