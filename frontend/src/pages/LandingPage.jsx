@@ -46,7 +46,7 @@ const LandingPage = () => {
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center items-center">
           <button 
-          // onClick={() => navigate('/all-campaigns')}
+          onClick={() => navigate('/all-campaigns')}
           className=" flex-1 bg-cyan-400 hover:bg-cyan-500 text-black px-6 py-3 rounded-full font-semibold w-full sm:w-auto">
             Donate now
           </button>

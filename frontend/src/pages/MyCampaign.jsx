@@ -5,18 +5,19 @@ import { useNavigate } from "react-router-dom";
 
 const contractAddress = "0x4BADc658CB702EEfcA9D31dbBDD8585eAD257693";
 
-const CampaignList = () => {
+const MyCampaignList = () => {
   const [campaigns, setCampaigns] = useState([]);
+  const [userAddress, setUserAddress] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const navigate = useNavigate();
 
   useEffect(() => {
-    loadCampaigns();
+    loadMyCampaigns();
   }, []);
 
-  async function loadCampaigns() {
+  async function loadMyCampaigns() {
     try {
       if (!window.ethereum) {
         console.error("MetaMask tidak terhubung.");
@@ -26,6 +27,8 @@ const CampaignList = () => {
       await window.ethereum.request({ method: "eth_requestAccounts" });
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
+      const address = await signer.getAddress();
+      setUserAddress(address);
 
       const contract = new ethers.Contract(
         contractAddress,
@@ -33,14 +36,45 @@ const CampaignList = () => {
         signer
       );
 
-      const campaigns = await contract.getCampaigns();
-      setCampaigns(campaigns);
+      const allCampaigns = await contract.getCampaigns();
+      const myCampaigns = allCampaigns
+        .map((campaign, index) => ({ ...campaign, index }))
+        .filter(
+          (campaign) => campaign.owner.toLowerCase() === address.toLowerCase()
+        );
+      setCampaigns(myCampaigns);
     } catch (error) {
       console.error(error);
     } finally {
       setLoading(false);
     }
   }
+
+  const handleWithdraw = async (id, amountCollected) => {
+    if (!amountCollected || amountCollected === "0") {
+      return alert("Tidak ada dana untuk ditarik.");
+    }
+
+    const confirmWithdraw = window.confirm(
+      `Tarik semua dana (${ethers.utils.formatEther(amountCollected)} ETH)?`
+    );
+    if (!confirmWithdraw) return;
+
+    try {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+      const contract = new ethers.Contract(contractAddress, CrowdFunding.abi, signer);
+
+      const tx = await contract.withdraw(id, amountCollected);
+      await tx.wait();
+
+      alert("Withdraw berhasil!");
+      loadMyCampaigns();
+    } catch (error) {
+      console.error("Withdraw gagal:", error);
+      alert("Withdraw gagal.");
+    }
+  };
 
   const handleNavigate = (path) => {
     setIsMenuOpen(false);
@@ -74,7 +108,7 @@ const CampaignList = () => {
           <li>
             <button
               onClick={() => handleNavigate("/all-campaigns")}
-              className="text-cyan-400 font-semibold"
+              className="text-white hover:text-cyan-400 transition"
             >
               Seluruh Campaign
             </button>
@@ -82,7 +116,7 @@ const CampaignList = () => {
           <li>
             <button
               onClick={() => handleNavigate("/my-campaigns")}
-              className="text-white hover:text-cyan-400 transition"
+              className="text-cyan-400 font-semibold"
             >
               Campaign Saya
             </button>
@@ -90,18 +124,20 @@ const CampaignList = () => {
         </ul>
       </div>
 
-      {/* Judul dan Indikator */}
+      {/* Judul & Info */}
       <div className="text-center pt-20 pb-10 px-4">
-        <h1 className="text-4xl font-bold tracking-tight">Daftar Penggalangan Dana</h1>
-        <p className="text-gray-400 mt-2">Kamu sedang melihat semua campaign yang tersedia</p>
+        <h1 className="text-4xl font-bold tracking-tight">Campaign Saya</h1>
+        <p className="text-gray-400 mt-2">Kamu sedang melihat daftar penggalangan dana yang kamu buat</p>
       </div>
 
       {/* Konten */}
       <div className="max-w-6xl mx-auto px-4 pb-12">
         {loading ? (
-          <p className="text-center text-gray-400 animate-pulse">Memuat data kampanye...</p>
+          <p className="text-center text-gray-400 animate-pulse">Memuat campaign kamu...</p>
         ) : campaigns.length === 0 ? (
-          <p className="text-center text-gray-400">Belum ada penggalangan dana yang tersedia.</p>
+          <p className="text-center text-gray-400">
+            Kamu belum membuat campaign apapun.
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {campaigns.map((item, index) => (
@@ -126,10 +162,10 @@ const CampaignList = () => {
                     {ethers.utils.formatEther(item.target)} ETH
                   </p>
                   <button
-                    onClick={() => navigate(`/campaign/${index}`)} // navigasi ke detail
-                    className="mt-4 w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg transition"
+                    onClick={() => handleWithdraw(item.index, item.amountCollected)}
+                    className="mt-4 w-full bg-rose-600 hover:bg-rose-700 text-white font-semibold py-2 px-4 rounded-lg transition"
                   >
-                    Donasi
+                    Withdraw
                   </button>
                 </div>
               </div>
@@ -141,4 +177,4 @@ const CampaignList = () => {
   );
 };
 
-export default CampaignList;
+export default MyCampaignList;
