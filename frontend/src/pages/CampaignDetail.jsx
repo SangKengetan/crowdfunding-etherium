@@ -3,10 +3,10 @@ import { useParams } from "react-router-dom";
 import { ethers } from "ethers";
 import CrowdFunding from "../abis/CrowdFunding.json";
 
-const contractAddress = "0x4BADc658CB702EEfcA9D31dbBDD8585eAD257693";
+const contractAddress = "0x3bDdFB675A7e08C5860CB834AC03B69765c151F2";
 
 const CampaignDetail = () => {
-  const { id } = useParams(); // id campaign dari URL
+  const { id } = useParams();
   const [campaign, setCampaign] = useState(null);
   const [donators, setDonators] = useState([]);
   const [donations, setDonations] = useState([]);
@@ -23,8 +23,8 @@ const CampaignDetail = () => {
       const signer = provider.getSigner();
       const contract = new ethers.Contract(contractAddress, CrowdFunding.abi, signer);
 
-      const campaigns = await contract.getCampaigns();
-      setCampaign(campaigns[id]);
+      const data = await contract.getCampaignById(id); // ✅ gunakan getCampaignById()
+      setCampaign(data);
 
       const [donatorList, donationList] = await contract.getDonators(id);
       setDonators(donatorList);
@@ -51,7 +51,7 @@ const CampaignDetail = () => {
       alert("Donasi berhasil!");
 
       setAmount("");
-      fetchCampaignData(); // refresh data
+      fetchCampaignData();
     } catch (error) {
       console.error("Gagal melakukan donasi:", error);
       alert("Gagal donasi.");
@@ -61,6 +61,10 @@ const CampaignDetail = () => {
   };
 
   if (!campaign) return <div className="p-4 text-white">Memuat data campaign...</div>;
+
+  const deadlineMs = Number(campaign.deadline) * 1000;
+  const isExpired = Date.now() > deadlineMs;
+  const isDisabled = isExpired || !campaign.isActive;
 
   return (
     <div className="p-6 bg-gray-900 text-white min-h-screen">
@@ -77,6 +81,7 @@ const CampaignDetail = () => {
           <p><strong>Target:</strong> {ethers.utils.formatEther(campaign.target)} ETH</p>
           <p><strong>Terkumpul:</strong> {ethers.utils.formatEther(campaign.amountCollected)} ETH</p>
           <p><strong>Owner:</strong> {campaign.owner}</p>
+          <p><strong>Status:</strong> {isExpired ? "Berakhir" : campaign.isActive ? "Aktif" : "Nonaktif"}</p>
         </div>
 
         {/* Form Donasi */}
@@ -88,13 +93,14 @@ const CampaignDetail = () => {
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             className="w-full p-2 bg-gray-700 text-white border border-gray-600 rounded focus:outline-none"
+            disabled={isDisabled}
           />
           <button
             onClick={handleDonate}
-            disabled={isLoading}
-            className="mt-3 w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-4 rounded transition"
+            disabled={isDisabled || isLoading}
+            className={`mt-3 w-full ${isDisabled ? "bg-gray-500 cursor-not-allowed" : "bg-cyan-500 hover:bg-cyan-600"} text-white font-semibold py-2 px-4 rounded transition`}
           >
-            {isLoading ? "Mengirim..." : "Donasi Sekarang"}
+            {isLoading ? "Mengirim..." : isDisabled ? "Campaign Tidak Aktif" : "Donasi Sekarang"}
           </button>
         </div>
 

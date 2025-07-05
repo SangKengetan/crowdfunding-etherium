@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import CrowdFunding from "../abis/CrowdFunding.json";
 import { useNavigate } from "react-router-dom";
 
-const contractAddress = "0x4BADc658CB702EEfcA9D31dbBDD8585eAD257693";
+const contractAddress = "0x3bDdFB675A7e08C5860CB834AC03B69765c151F2";
 
 const CampaignList = () => {
   const [campaigns, setCampaigns] = useState([]);
@@ -16,6 +16,48 @@ const CampaignList = () => {
     loadCampaigns();
   }, []);
 
+  // async function loadCampaigns() {
+  //   try {
+  //     if (!window.ethereum) {
+  //       console.error("MetaMask tidak terhubung.");
+  //       return;
+  //     }
+
+  //     await window.ethereum.request({ method: "eth_requestAccounts" });
+  //     const provider = new ethers.providers.Web3Provider(window.ethereum);
+  //     const signer = provider.getSigner();
+
+  //     const contract = new ethers.Contract(
+  //       contractAddress,
+  //       CrowdFunding.abi,
+  //       signer
+  //     );
+
+  //     const campaignsRaw = await contract.getCampaigns();
+
+  //     const campaignsWithId = campaignsRaw.map((c, i) => ({
+  //       id: i,
+  //       owner: c.owner,
+  //       title: c.title,
+  //       description: c.description,
+  //       target: c.target,
+  //       amountCollected: c.amountCollected,
+  //       image: c.image,
+  //       deadline: Number(c.deadline),
+  //       isActive: c.isActive,
+  //     }));
+      
+  //     const filteredCampaigns = campaignsWithId.filter(
+  //       c => c.isActive && c.deadline > Math.floor(Date.now() / 1000)
+  //     );
+  //     setCampaigns(filteredCampaigns);
+  //   } catch (error) {
+  //     console.error(error);
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // }
+
   async function loadCampaigns() {
     try {
       if (!window.ethereum) {
@@ -27,14 +69,23 @@ const CampaignList = () => {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
 
-      const contract = new ethers.Contract(
-        contractAddress,
-        CrowdFunding.abi,
-        signer
-      );
+      const contract = new ethers.Contract(contractAddress, CrowdFunding.abi, signer);
 
-      const campaigns = await contract.getCampaigns();
-      setCampaigns(campaigns);
+      const [ids, campaignsRaw] = await contract.getActiveCampaignsWithId();
+
+      const campaignsWithId = campaignsRaw.map((c, i) => ({
+        id: ids[i].toNumber(), // ✅ ID asli dari mapping
+        owner: c.owner,
+        title: c.title,
+        description: c.description,
+        target: c.target,
+        amountCollected: c.amountCollected,
+        image: c.image,
+        deadline: Number(c.deadline),
+        isActive: c.isActive,
+      }));
+
+      setCampaigns(campaignsWithId);
     } catch (error) {
       console.error(error);
     } finally {
@@ -42,9 +93,21 @@ const CampaignList = () => {
     }
   }
 
+
   const handleNavigate = (path) => {
     setIsMenuOpen(false);
     navigate(path);
+  };
+
+  const formatTimeLeft = (deadline) => {
+    const secondsLeft = deadline - Math.floor(Date.now() / 1000);
+    if (secondsLeft <= 0) return "Campaign sudah berakhir";
+
+    const hours = Math.floor(secondsLeft / 3600);
+    const minutes = Math.floor((secondsLeft % 3600) / 60);
+    const seconds = secondsLeft % 60;
+
+    return `${hours}j ${minutes}m ${seconds}s tersisa`;
   };
 
   return (
@@ -93,47 +156,76 @@ const CampaignList = () => {
       {/* Judul dan Indikator */}
       <div className="text-center pt-20 pb-10 px-4">
         <h1 className="text-4xl font-bold tracking-tight">Daftar Penggalangan Dana</h1>
-        <p className="text-gray-400 mt-2">Kamu sedang melihat semua campaign yang tersedia</p>
+        <p className="text-gray-400 mt-2">
+          Kamu sedang melihat semua campaign yang tersedia
+        </p>
       </div>
 
       {/* Konten */}
       <div className="max-w-6xl mx-auto px-4 pb-12">
         {loading ? (
-          <p className="text-center text-gray-400 animate-pulse">Memuat data kampanye...</p>
+          <p className="text-center text-gray-400 animate-pulse">
+            Memuat data kampanye...
+          </p>
         ) : campaigns.length === 0 ? (
-          <p className="text-center text-gray-400">Belum ada penggalangan dana yang tersedia.</p>
+          <p className="text-center text-gray-400">
+            Belum ada penggalangan dana yang tersedia.
+          </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {campaigns.map((item, index) => (
-              <div
-                key={index}
-                className="bg-white text-gray-900 rounded-xl shadow-md overflow-hidden hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
-              >
-                <img
-                  src={item.image}
-                  alt={item.title}
-                  className="w-full h-48 object-cover"
-                />
-                <div className="p-4">
-                  <h2 className="text-xl font-semibold truncate">{item.title}</h2>
-                  <p className="text-sm text-gray-600 mb-2 line-clamp-2">{item.description}</p>
-                  <p className="text-sm text-gray-700 mb-1">
-                    <span className="font-medium">Terkumpul:</span>{" "}
-                    {ethers.utils.formatEther(item.amountCollected)} ETH
-                  </p>
-                  <p className="text-sm text-gray-700">
-                    <span className="font-medium">Target:</span>{" "}
-                    {ethers.utils.formatEther(item.target)} ETH
-                  </p>
-                  <button
-                    onClick={() => navigate(`/campaign/${index}`)} // navigasi ke detail
-                    className="mt-4 w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg transition"
-                  >
-                    Donasi
-                  </button>
+            {campaigns.map((item) => {
+              const amountCollected = parseFloat(
+                ethers.utils.formatEther(item.amountCollected)
+              );
+              const target = parseFloat(ethers.utils.formatEther(item.target));
+              const progress = Math.min((amountCollected / target) * 100, 100);
+
+              return (
+                <div
+                  key={item.id}
+                  className="bg-white text-gray-900 rounded-xl shadow-md overflow-hidden hover:shadow-lg transform hover:-translate-y-1 transition-all duration-300"
+                >
+                  <img
+                    src={item.image}
+                    alt={item.title}
+                    className="w-full h-48 object-cover"
+                  />
+                  <div className="p-4">
+                    <h2 className="text-xl font-semibold truncate">
+                      {item.title}
+                    </h2>
+                    <p className="text-sm text-gray-600 mb-2 line-clamp-2">
+                      {item.description}
+                    </p>
+                    <div className="mb-2">
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">Terkumpul:</span>{" "}
+                        {amountCollected.toFixed(2)} ETH
+                      </p>
+                      <p className="text-sm text-gray-700">
+                        <span className="font-medium">Target:</span>{" "}
+                        {target.toFixed(2)} ETH
+                      </p>
+                      <p className="text-sm text-gray-500">
+                        {formatTimeLeft(item.deadline)}
+                      </p>
+                    </div>
+                    <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden mb-4">
+                      <div
+                        className="bg-cyan-500 h-full"
+                        style={{ width: `${progress}%` }}
+                      ></div>
+                    </div>
+                    <button
+                      onClick={() => navigate(`/campaign/${item.id}`)}
+                      className="mt-2 w-full bg-cyan-500 hover:bg-cyan-600 text-white font-semibold py-2 px-4 rounded-lg transition"
+                    >
+                      Donasi
+                    </button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
