@@ -24,6 +24,22 @@ const LandingPage = () => {
   navigate('/create-campaign');
   };
 
+  const handleDonation = async () => {
+    if (!window.ethereum) {
+      alert("Silakan instal MetaMask terlebih dahulu.");
+      return;
+    }
+  
+    const accounts = await window.ethereum.request({ method: 'eth_accounts' });
+  
+    if (accounts.length === 0) {
+      alert("Silakan hubungkan wallet Anda terlebih dahulu.");
+      return;
+    }
+  
+    navigate('/all-campaigns');
+    };
+
   return (
     <div
       className="relative min-h-screen w-full bg-cover bg-center"
@@ -46,7 +62,7 @@ const LandingPage = () => {
         </p>
         <div className="mt-8 flex flex-col sm:flex-row gap-4 w-full max-w-md justify-center items-center">
           <button 
-          onClick={() => navigate('/all-campaigns')}
+          onClick={handleDonation}
           className=" flex-1 bg-cyan-400 hover:bg-cyan-500 text-black px-6 py-3 rounded-full font-semibold w-full sm:w-auto">
             Donate now
           </button>

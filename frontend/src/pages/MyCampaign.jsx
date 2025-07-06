@@ -3,7 +3,7 @@ import { ethers } from "ethers";
 import CrowdFunding from "../abis/CrowdFunding.json";
 import { useNavigate } from "react-router-dom";
 
-const contractAddress = "0x3bDdFB675A7e08C5860CB834AC03B69765c151F2";
+const contractAddress = "0xdd9F11eb62126b0BF0e68cc5471c181E2Df194d5";
 
 const MyCampaignList = () => {
   const [campaigns, setCampaigns] = useState([]);
@@ -11,12 +11,22 @@ const MyCampaignList = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [withdrawingId, setWithdrawingId] = useState(null);
+  const [now, setNow] = useState(Math.floor(Date.now() / 1000)); // <--- Tambah state waktu
 
   const navigate = useNavigate();
 
   useEffect(() => {
     loadMyCampaigns();
   }, []);
+
+  // Timer: update 'now' setiap detik
+    useEffect(() => {
+      const interval = setInterval(() => {
+        setNow(Math.floor(Date.now() / 1000));
+      }, 1000); // Update setiap 1 detik
+  
+      return () => clearInterval(interval);
+    }, []);
 
   const loadMyCampaigns = async () => {
     try {
@@ -93,9 +103,9 @@ const MyCampaignList = () => {
   const canWithdraw = (campaign) => {
     const now = Math.floor(Date.now() / 1000);
     const isExpired = now >= campaign.deadline;
-    const reachedTarget = ethers.BigNumber.from(campaign.amountCollected).gte(campaign.target);
+    // const reachedTarget = ethers.BigNumber.from(campaign.amountCollected).gte(campaign.target);
     const hasFund = ethers.BigNumber.from(campaign.amountCollected).gt(0);
-    return hasFund && (isExpired || reachedTarget);
+    return hasFund && isExpired;
   };
 
   const getStatusColor = (status) => {
@@ -107,8 +117,9 @@ const MyCampaignList = () => {
     }
   };
 
+  // Gunakan 'now' agar waktu update otomatis
   const formatTimeLeft = (deadline) => {
-    const secondsLeft = deadline - Math.floor(Date.now() / 1000);
+    const secondsLeft = deadline - now; // <- gunakan 'now'
     if (secondsLeft <= 0) return "Campaign sudah berakhir";
 
     const hours = Math.floor(secondsLeft / 3600);
@@ -147,20 +158,36 @@ const MyCampaignList = () => {
         }`}
       >
         <ul className="space-y-4">
-          <li>
+          <li className="flex justify-center">
+            <button
+              onClick={() => handleNavigate("/")}
+              className="w-48 py-2 px-4 text-white hover:text-cyan-400 transition text-center"
+            >
+              Home
+            </button>
+          </li>
+          <li className="flex justify-center">
             <button
               onClick={() => handleNavigate("/all-campaigns")}
-              className="text-white hover:text-cyan-400 transition"
+              className="w-48 py-2 px-4 text-white hover:text-cyan-400 transition text-center"
             >
               Seluruh Campaign
             </button>
           </li>
-          <li>
+          <li className="flex justify-center">
             <button
               onClick={() => handleNavigate("/my-campaigns")}
-              className="text-cyan-400 font-semibold"
+              className="w-48 py-2 px-4 text-cyan-400 font-semibold transition text-center"
             >
               Campaign Saya
+            </button>
+          </li>
+          <li className="flex justify-center">
+            <button
+              onClick={() => handleNavigate("/create-campaign")}
+              className="w-48 py-2 px-4 text-white hover:text-cyan-400 transition text-center"
+            >
+              Create Campaign
             </button>
           </li>
         </ul>

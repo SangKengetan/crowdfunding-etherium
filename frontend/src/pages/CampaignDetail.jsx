@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { ethers } from "ethers";
 import CrowdFunding from "../abis/CrowdFunding.json";
 
-const contractAddress = "0x3bDdFB675A7e08C5860CB834AC03B69765c151F2";
+const contractAddress = "0xdd9F11eb62126b0BF0e68cc5471c181E2Df194d5";
 
 const CampaignDetail = () => {
   const { id } = useParams();
@@ -12,6 +12,10 @@ const CampaignDetail = () => {
   const [donations, setDonations] = useState([]);
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+
+  // Tambahkan untuk sidebar
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchCampaignData();
@@ -32,6 +36,11 @@ const CampaignDetail = () => {
     } catch (error) {
       console.error("Gagal mengambil data campaign:", error);
     }
+  };
+
+  const handleNavigate = (path) => {
+    setIsMenuOpen(false);
+    navigate(path);
   };
 
   const handleDonate = async () => {
@@ -67,7 +76,64 @@ const CampaignDetail = () => {
   const isDisabled = isExpired || !campaign.isActive;
 
   return (
-    <div className="p-6 bg-gray-900 text-white min-h-screen">
+    // <div className="p-6 bg-gray-900 text-white min-h-screen">
+    <div className="min-h-screen bg-gray-900 text-white relative">
+      {/* Hamburger */}
+      <div className="absolute top-4 left-4 z-50">
+        <button
+          className="flex flex-col gap-1 group"
+          onClick={() => setIsMenuOpen(!isMenuOpen)}
+        >
+          {[...Array(3)].map((_, i) => (
+            <span
+              key={i}
+              className="w-6 h-1 bg-white transition-all duration-300 group-hover:bg-cyan-400"
+            ></span>
+          ))}
+        </button>
+      </div>
+
+      {/* Sidebar */}
+      <div
+        className={`absolute top-0 left-0 w-48 h-full bg-gray-800 p-6 pt-16 shadow-lg transition-transform duration-300 z-40 ${
+          isMenuOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        <ul className="space-y-4">
+          <li className="flex justify-center">
+            <button
+              onClick={() => handleNavigate("/")}
+              className="w-48 py-2 px-4 text-white hover:text-cyan-400 transition text-center"
+            >
+              Home
+            </button>
+          </li>
+          <li className="flex justify-center">
+            <button
+              onClick={() => handleNavigate("/all-campaigns")}
+              className="w-48 py-2 px-4 text-cyan-400 font-semibold transition text-center"
+            >
+              Seluruh Campaign
+            </button>
+          </li>
+          <li className="flex justify-center">
+            <button
+              onClick={() => handleNavigate("/my-campaigns")}
+              className="w-48 py-2 px-4 text-white hover:text-cyan-400  transition text-center"
+            >
+              Campaign Saya
+            </button>
+          </li>
+          <li className="flex justify-center">
+            <button
+              onClick={() => handleNavigate("/create-campaign")}
+              className="w-48 py-2 px-4 text-white hover:text-cyan-400 transition text-center"
+            >
+              Create Campaign
+            </button>
+          </li> 
+        </ul>
+      </div>
       <div className="max-w-3xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
         <img
           src={campaign.image}

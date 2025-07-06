@@ -1,16 +1,18 @@
 import React, { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import CrowdFunding from "../abis/CrowdFunding.json";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom"; // tambahkan useLocation
 
-const contractAddress = "0x3bDdFB675A7e08C5860CB834AC03B69765c151F2";
+const contractAddress = "0xdd9F11eb62126b0BF0e68cc5471c181E2Df194d5";
 
 const CampaignList = () => {
   const [campaigns, setCampaigns] = useState([]);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-
+  const [now, setNow] = useState(Math.floor(Date.now() / 1000)); // <--- Tambah state waktu
   const navigate = useNavigate();
+  const location = useLocation(); // ambil location saat ini
+  const currentPath = location.pathname;
 
   useEffect(() => {
     loadCampaigns();
@@ -58,6 +60,15 @@ const CampaignList = () => {
   //   }
   // }
 
+  // Timer: update 'now' setiap detik
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Math.floor(Date.now() / 1000));
+    }, 1000); // Update setiap 1 detik
+
+    return () => clearInterval(interval);
+  }, []);
+
   async function loadCampaigns() {
     try {
       if (!window.ethereum) {
@@ -93,14 +104,25 @@ const CampaignList = () => {
     }
   }
 
-
   const handleNavigate = (path) => {
     setIsMenuOpen(false);
     navigate(path);
   };
 
+  // const formatTimeLeft = (deadline) => {
+  //   const secondsLeft = deadline - Math.floor(Date.now() / 1000);
+  //   if (secondsLeft <= 0) return "Campaign sudah berakhir";
+
+  //   const hours = Math.floor(secondsLeft / 3600);
+  //   const minutes = Math.floor((secondsLeft % 3600) / 60);
+  //   const seconds = secondsLeft % 60;
+
+  //   return `${hours}j ${minutes}m ${seconds}s tersisa`;
+  // };
+
+  // Gunakan 'now' agar waktu update otomatis
   const formatTimeLeft = (deadline) => {
-    const secondsLeft = deadline - Math.floor(Date.now() / 1000);
+    const secondsLeft = deadline - now; // <- gunakan 'now'
     if (secondsLeft <= 0) return "Campaign sudah berakhir";
 
     const hours = Math.floor(secondsLeft / 3600);
@@ -134,20 +156,42 @@ const CampaignList = () => {
         }`}
       >
         <ul className="space-y-4">
-          <li>
+          <li className="flex justify-center">
+            <button
+              onClick={() => handleNavigate("/")}
+              className={`w-48 py-2 px-4 transition text-center ${
+                currentPath === "/" ? "text-cyan-400 font-semibold" : "text-white hover:text-cyan-400"
+              }`}
+            >
+              Home
+            </button>
+          </li>
+          <li className="flex justify-center">
             <button
               onClick={() => handleNavigate("/all-campaigns")}
-              className="text-cyan-400 font-semibold"
+              className={`w-48 py-2 px-4 transition text-center ${
+                currentPath === "/all-campaigns" ? "text-cyan-400 font-semibold" : "text-white hover:text-cyan-400"
+              }`}
             >
               Seluruh Campaign
             </button>
           </li>
-          <li>
+          <li className="flex justify-center">
             <button
               onClick={() => handleNavigate("/my-campaigns")}
-              className="text-white hover:text-cyan-400 transition"
+              className={`w-48 py-2 px-4 transition text-center ${
+                currentPath === "/my-campaigns" ? "text-cyan-400 font-semibold" : "text-white hover:text-cyan-400"
+              }`}
             >
               Campaign Saya
+            </button>
+          </li>
+          <li className="flex justify-center">
+            <button
+              onClick={() => handleNavigate("/create-campaign")}
+              className="w-48 py-2 px-4 text-white hover:text-cyan-400 transition text-center"
+            >
+              Create Campaign
             </button>
           </li>
         </ul>
@@ -173,7 +217,9 @@ const CampaignList = () => {
           </p>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {campaigns.map((item) => {
+            {campaigns
+              .filter(item => item.deadline > now)
+              .map((item) => {
               const amountCollected = parseFloat(
                 ethers.utils.formatEther(item.amountCollected)
               );
