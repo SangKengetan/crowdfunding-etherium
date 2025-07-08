@@ -25,7 +25,7 @@ module.exports = {
     sepolia: {
       chainId: 11155111,
       url: 'https://eth-sepolia.g.alchemy.com/v2/lQtnnsSVGsY_7HNuG-WvAOHn1xiVsqOj',
-      accounts: ['18251005caee1ee2204e0d9c916715e8447e74c839957100bdf11e86c45389a9'],
+      accounts: ['private key address wallet sepolia'], // private key address wallet sepolia
     },
   },
 };
